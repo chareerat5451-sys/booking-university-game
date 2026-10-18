@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>จองคิวศูนย์ฟื้นฟูสมรรถภาพทางด้านวิทยาศาสตร์การกีฬาเคลื่อนที่</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --navy: #0b2a4a;
+    --navy-dark: #081d35;
+    --gold: #d4a53a;
+    --bg: #f4f6f9;
+    --card: #ffffff;
+    --line: #e2e6ec;
+    --text: #1b2430;
+    --muted: #65707e;
+    --ok: #1e8e5a;
+    --danger: #c0392b;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "TH SarabunPSK", "Sarabun", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 18px;
+  }
+  header {
+    background: linear-gradient(135deg, var(--navy), var(--navy-dark));
+    color: #fff;
+    padding: 20px 16px 28px;
+    text-align: center;
+  }
+  header h1 { margin: 0 0 4px; font-size: 24px; }
+  header p { margin: 2px 0; opacity: .9; font-size: 16px; }
+  .wrap { max-width: 980px; margin: -18px auto 40px; padding: 0 14px; }
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 18px rgba(10,30,60,.08);
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .tabs button {
+    border: 1px solid var(--line);
+    background: #fff;
+    padding: 8px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 16px;
+    font-family: inherit;
+  }
+  .tabs button.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .pill-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill {
+    border: 1px solid var(--line);
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    background: #fafbfc;
+  }
+  .pill small { display: block; color: var(--muted); font-size: 13px; }
+  .pill.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .date-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 16px; }
+  .date-btn {
+    border: 1px solid var(--line);
+    background: #fff;
+    padding: 8px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+  }
+  .date-btn.active { background: var(--gold); color: #1b2430; border-color: var(--gold); font-weight: 700; }
+  .slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); gap: 8px; }
+  .slot {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 6px;
+    text-align: center;
+    cursor: pointer;
+    background: #fff;
+    font-size: 15px;
+  }
+  .light-bar { display: flex; gap: 3px; justify-content: center; margin-top: 6px; }
+  .light-bar i {
+    width: 9px; height: 9px; border-radius: 2px; background: #dfe4ea; display: inline-block;
+  }
+  .light-bar i.lit { background: var(--ok); }
+  .slot.full .light-bar i.lit { background: var(--danger); }
+  .slot.full { background: #fdeceb; color: #9b3d33; cursor: not-allowed; opacity: .75; }
+  .slot:hover:not(.full) { border-color: var(--navy); }
+  .slot.selected { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .slot.selected .cap { color: #cfe0f0; }
+  .select-bar {
+    position: sticky; bottom: 12px; display: flex; justify-content: space-between; align-items: center;
+    background: var(--navy); color: #fff; padding: 12px 16px; border-radius: 12px; margin-top: 14px;
+    box-shadow: 0 6px 18px rgba(10,30,60,.25);
+  }
+  .select-bar span { font-size: 15px; }
+  .cart-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #eef2f7; border: 1px solid var(--line); border-radius: 999px;
+    padding: 6px 12px; font-size: 14px; cursor: pointer;
+  }
+  .cart-chip:hover { background: #e2e8f0; }
+  .cart-chip b { color: var(--danger); font-weight: 700; }
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(10,20,35,.5);
+    display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50;
+  }
+  .modal {
+    background: #fff; border-radius: var(--radius); padding: 20px; max-width: 420px; width: 100%;
+    max-height: 90vh; overflow: auto;
+  }
+  .modal h3 { margin-top: 0; }
+  label { display: block; margin: 10px 0 4px; font-weight: 600; font-size: 15px; }
+  input[type=text], input[type=tel], select, textarea {
+    width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 8px;
+    font-size: 16px; font-family: inherit;
+  }
+  .radio-row { display: flex; gap: 16px; }
+  .radio-row label { display: flex; align-items: center; gap: 6px; font-weight: 400; }
+  .btn {
+    display: inline-block; border: none; border-radius: 8px; padding: 10px 18px;
+    font-size: 16px; cursor: pointer; font-family: inherit;
+  }
+  .btn-primary { background: var(--navy); color: #fff; }
+  .btn-outline { background: #fff; border: 1px solid var(--line); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+  #connErrorBanner {
+    display: none; background: #fdeceb; border: 1px solid #f2b8b1; color: #9b3d33;
+    padding: 10px 14px; border-radius: 10px; margin-bottom: 14px; font-size: 15px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; }
+  th { background: #f0f3f7; }
+  .muted { color: var(--muted); font-size: 14px; }
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--navy); color: #fff; padding: 10px 20px; border-radius: 10px;
+    z-index: 80; font-size: 15px;
+  }
+  .restrict-note {
+    background: #fff7e6; border: 1px solid #f0d9a0; color: #7a5a10;
+    padding: 8px 12px; border-radius: 8px; font-size: 14px; margin-bottom: 10px;
+  }
+  .admin-login { max-width: 320px; margin: 60px auto; text-align: center; }
+  @media (max-width: 480px) { body { font-size: 16px; } header h1 { font-size: 20px; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ศูนย์ฟื้นฟูสมรรถภาพทางด้านวิทยาศาสตร์การกีฬาเคลื่อนที่</h1>
+  <p>การแข่งขันกีฬามหาวิทยาลัยแห่งประเทศไทย ครั้งที่ 52 รอบคัดเลือก เขตภาคกลาง</p>
+  <p>18–23 ตุลาคม 2569 · เวลา 08:00–20:00 น.</p>
+</header>
+
+<div class="wrap">
+  <div id="connErrorBanner"></div>
+  <div class="tabs">
+    <button id="tabBook" class="active">จองคิว</button>
+    <button id="tabAdmin">ผู้ดูแลระบบ</button>
+  </div>
+
+  <div id="bookView"></div>
+  <div id="adminView" style="display:none;"></div>
+</div>
+
+<script>
+const API = "/api/bookings";
+let META = null;
+let selectedLocation = null;
+let selectedServiceId = null;
+let selectedDate = null;
+// ตะกร้า: เลือกได้หลายรายการ (หลายบริการ หลายช่วงเวลา) ในรอบเดียวกัน แต่ต้องเป็นสถานที่เดียวกัน+วันเดียวกันทั้งตะกร้า
+// (บริการที่เลือกได้ขึ้นอยู่กับสถานที่ — ศูนย์ประสานงาน ม.ราชภัฏฯ มีครบ, สถานที่อื่นมีแค่นวด+ติดเทป)
+// แต่ละรายการ: { serviceId, serviceName, date, location, slotId, startMin, endMin, label, advanceMin }
+let cart = [];
+let bookingsCache = [];
+let adminAuthed = false;
+const ADMIN_PASSCODE = "2569";
+let adminTeamFilter = "all";
+let adminServiceFilter = "all";
+// ต้องตรงกับ PROVIDER_TEAMS ฝั่ง netlify/functions/bookings.js
+const PROVIDER_TEAMS = [
+  "ทีมที่ 1 อ.ชารีรัตน์",
+  "ทีมที่ 2 อ.พิษณุ",
+  "ทีมที่ 3 อ.กฤษฏ์",
+  "ทีมที่ 4 อ.ณัฏฐ์ดนัย",
+];
+
+function showConnError(msg) {
+  const el = document.getElementById("connErrorBanner");
+  el.style.display = "block";
+  el.textContent = "เกิดปัญหาการเชื่อมต่อระบบ: " + msg;
+}
+function clearConnError() {
+  document.getElementById("connErrorBanner").style.display = "none";
+}
+
+async function api(action, payload) {
+  try {
+    const res = await fetch(API, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action, ...payload }),
+    });
+    const data = await res.json();
+    if (!data.ok && data.stage) {
+      showConnError(`[${data.stage}] ${data.error}`);
+    } else {
+      clearConnError();
+    }
+    return data;
+  } catch (e) {
+    showConnError(e.message);
+    return { ok: false, err: "network" };
+  }
+}
+
+function toast(msg) {
+  const t = document.createElement("div");
+  t.className = "toast";
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+function allowedServiceIdsFor(location) {
+  return (META.locationServices && META.locationServices[location]) || META.services.map(s => s.id);
+}
+
+async function loadMeta() {
+  const data = await api("meta", {});
+  if (data.ok) {
+    META = data;
+    selectedLocation = META.locations[0];
+    const allowed = allowedServiceIdsFor(selectedLocation);
+    selectedServiceId = (META.services.find(s => allowed.includes(s.id)) || META.services[0]).id;
+    selectedDate = META.dates[0].iso;
+  }
+}
+
+async function loadBookings() {
+  const data = await api("listAll", {});
+  if (data.ok) bookingsCache = data.bookings;
+}
+
+function slotsForService(svc) {
+  const out = [];
+  for (let t = META.openMin; t + svc.durationMin <= META.closeMin; t += svc.durationMin) {
+    const pad = n => String(n).padStart(2, "0");
+    const hh1 = pad(Math.floor(t/60)), mm1 = pad(t%60);
+    const end = t + svc.durationMin;
+    const hh2 = pad(Math.floor(end/60)), mm2 = pad(end%60);
+    out.push({ id: `${svc.id}-${t}`, startMin: t, endMin: end, label: `${hh1}:${mm1}-${hh2}:${mm2}` });
+  }
+  return out;
+}
+
+function countFor(date, slotId) {
+  return bookingsCache.filter(b => b.date === date && b.slotId === slotId).length
+    + cart.filter(c => c.date === date && c.slotId === slotId).length;
+}
+
+// นับจำนวน "ทีม" (ไม่ใช่จำนวนเรคคอร์ด) ที่ถูกใช้งานในวันเดียวกันที่ช่วงเวลาทับซ้อนกัน (เพดานรวม 4 ทีม)
+// 1 รอบการจอง (roundId เดียวกัน) ใช้แค่ 1 ทีมเสมอ แม้จะมีหลายรายการที่เวลาทับซ้อนกัน
+// (เลือกบริการใดก็ได้ที่สถานที่นั้นมี ทับซ้อนเวลากันได้หมดในรอบเดียวกัน) จึงต้องนับจำนวน "รอบ" ไม่ใช่จำนวนรายการดิบ
+function countTeamOverlap(date, startMin, endMin) {
+  const overlapping = bookingsCache.filter(b => b.date === date && b.startMin < endMin && startMin < b.endMin);
+  const roundIds = new Set(overlapping.map(b => b.roundId || b.key));
+  const fromBookings = roundIds.size;
+  // ทั้งตะกร้าที่ยังไม่กดยืนยัน จะกลายเป็น "1 รอบเดียว" เมื่อส่งจอง จึงนับเพิ่มได้สูงสุดแค่ 1
+  // ไม่ว่าจะมีกี่รายการในตะกร้าที่ทับซ้อนช่วงเวลานี้
+  const fromCart = cart.some(c => c.date === date && c.startMin < endMin && startMin < c.endMin) ? 1 : 0;
+  return fromBookings + fromCart;
+}
+
+function cartKey(c) { return `${c.serviceId}|${c.date}|${c.slotId}`; }
+
+function isInCart(serviceId, date, slotId) {
+  return cart.some(c => c.serviceId === serviceId && c.date === date && c.slotId === slotId);
+}
+
+function renderLocationPills() {
+  return `<div class="pill-grid">` + META.locations.map(l => `
+    <div class="pill ${l===selectedLocation?'active':''}" data-loc="${encodeURIComponent(l)}">${l}</div>`
+  ).join("") + `</div>`;
+}
+
+function renderServicePills() {
+  const allowed = allowedServiceIdsFor(selectedLocation);
+  const list = META.services.filter(s => allowed.includes(s.id));
+  return `<div class="pill-grid">` + list.map(s => `
+    <div class="pill ${s.id===selectedServiceId?'active':''}" data-svc="${s.id}">
+      ${s.name}<small>รองรับ ${s.capacity} คิว/รอบ · ${s.durationMin} นาที${s.advanceMin ? ' · จองล่วงหน้า ≥'+s.advanceMin+' นาที' : ''}</small>
+    </div>`).join("") + `</div>`;
+}
+
+function renderDateRow() {
+  return `<div class="date-row">` + META.dates.map(d => `
+    <button class="date-btn ${d.iso===selectedDate?'active':''}" data-date="${d.iso}">${d.label}</button>
+  `).join("") + `</div>`;
+}
+
+function renderSlots() {
+  const svc = META.services.find(s => s.id === selectedServiceId);
+  const slots = slotsForService(svc);
+  const teamCap = META.teamCapacity || 4;
+  return `<div class="slot-grid">` + slots.map(sl => {
+    const picked = isInCart(svc.id, selectedDate, sl.id);
+    const used = countFor(selectedDate, sl.id);
+    const serviceFull = used >= svc.capacity;
+    const teamUsed = countTeamOverlap(selectedDate, sl.startMin, sl.endMin);
+    const teamFull = teamUsed >= teamCap;
+    // รายการที่เลือกอยู่ในตะกร้าแล้วต้องกดเอาออกได้เสมอ แม้จำนวนที่นับรวมตัวเองจะถึงเพดานพอดี
+    const full = (serviceFull || teamFull) && !picked;
+    const lights = Array.from({ length: svc.capacity }, (_, i) =>
+      `<i class="${i < used ? 'lit' : ''}"></i>`
+    ).join("");
+    const subLabel = (!serviceFull && teamFull)
+      ? `<div class="cap" style="color:var(--danger); font-size:11px; margin-top:6px;">ทีมเต็ม</div>`
+      : `<div class="light-bar">${lights}</div>`;
+    return `<div class="slot ${full?'full':''} ${picked?'selected':''}" data-slot="${sl.id}" data-start="${sl.startMin}">
+      <div>${sl.label}</div>
+      ${subLabel}
+    </div>`;
+  }).join("") + `</div>`;
+}
+
+function renderCartCard() {
+  if (cart.length === 0) return "";
+  return `
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <h3 style="margin:0;">ตะกร้าของคุณ (${cart.length} รายการ · ${cart[0].location} · วันที่ ${cart[0].date})</h3>
+        <div>
+          <button class="btn btn-outline" id="btnClearCart" style="margin-right:8px;">ล้างตะกร้า</button>
+          <button class="btn btn-primary" id="btnCheckout">ตรวจสอบและจองทั้งหมด (${cart.length})</button>
+        </div>
+      </div>
+      <p class="muted" style="margin:6px 0 10px;">เลือกได้หลายบริการในรอบเดียวกัน (วันเดียวกันทั้งหมด) แล้วกรอกข้อมูลผู้จองครั้งเดียวตอนจบ · เลือกเวลาทับซ้อนกันได้ทุกบริการที่สถานที่นี้มี (ทีมเดียวกันดูแลทั้งรอบ)</p>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        ${cart.map((c, i) => `
+          <span class="cart-chip" data-remove="${i}" title="กดเพื่อเอาออกจากตะกร้า">
+            ${c.serviceName} · ${c.label} <b>&times;</b>
+          </span>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderBookView() {
+  const el = document.getElementById("bookView");
+  el.innerHTML = `
+    <div class="card">
+      <h3 style="margin-top:0;">1. เลือกสถานที่ใช้บริการ</h3>
+      ${renderLocationPills()}
+      <p class="muted" style="margin:8px 0 0;">บริการที่เลือกได้ขึ้นอยู่กับสถานที่ — ที่ "ศูนย์ประสานงาน มหาวิทยาลัยราชภัฏพระนครศรีอยุธยา" มีครบทุกบริการ ส่วนสถานที่แข่งขันอื่นมีเฉพาะนวดผ่อนคลายและติดเทป Kinesio (เครื่องมือหนักเคลื่อนย้ายไม่ได้)</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;">2. เลือกบริการ</h3>
+      ${renderServicePills()}
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;">3. เลือกวันที่</h3>
+      ${renderDateRow()}
+      <h3>4. เลือกช่วงเวลา (เลือกได้หลายช่วง หลายบริการ แล้วกด "เพิ่มลงตะกร้า")</h3>
+      ${renderSlots()}
+    </div>
+    ${renderCartCard()}
+  `;
+  el.querySelectorAll("[data-loc]").forEach(p => p.onclick = () => {
+    const newLoc = decodeURIComponent(p.dataset.loc);
+    if (newLoc === selectedLocation) return;
+    if (cart.length > 0 && cart[0].location !== newLoc) {
+      if (!confirm(`ตะกร้าตอนนี้มีรายการสำหรับสถานที่ "${cart[0].location}" อยู่ (1 รอบจองได้สถานที่เดียวเท่านั้น)\nถ้าเปลี่ยนสถานที่ ตะกร้าจะถูกล้างทั้งหมด ดำเนินการต่อหรือไม่?`)) return;
+      cart = [];
+    }
+    selectedLocation = newLoc;
+    const allowed = allowedServiceIdsFor(selectedLocation);
+    if (!allowed.includes(selectedServiceId)) selectedServiceId = allowed[0];
+    renderBookView();
+  });
+  el.querySelectorAll("[data-svc]").forEach(p => p.onclick = () => {
+    selectedServiceId = p.dataset.svc;
+    renderBookView();
+  });
+  el.querySelectorAll("[data-date]").forEach(b => b.onclick = () => {
+    const newDate = b.dataset.date;
+    if (cart.length > 0 && cart[0].date !== newDate) {
+      if (!confirm(`ตะกร้าตอนนี้มีรายการสำหรับวันที่ ${cart[0].date} อยู่ (1 รอบจองได้วันเดียวเท่านั้น)\nถ้าเปลี่ยนวันที่ ตะกร้าจะถูกล้างทั้งหมด ดำเนินการต่อหรือไม่?`)) return;
+      cart = [];
+    }
+    selectedDate = newDate;
+    renderBookView();
+  });
+  el.querySelectorAll("[data-slot]").forEach(s => {
+    const slotId = s.dataset.slot;
+    const picked = isInCart(selectedServiceId, selectedDate, slotId);
+    if (s.classList.contains("full") && !picked) return;
+    s.onclick = () => {
+      const idx = cart.findIndex(c => c.serviceId === selectedServiceId && c.date === selectedDate && c.slotId === slotId);
+      if (idx >= 0) {
+        cart.splice(idx, 1);
+      } else {
+        const svc = META.services.find(sv => sv.id === selectedServiceId);
+        const slots = slotsForService(svc);
+        const sl = slots.find(x => x.id === slotId);
+        if (!sl) return;
+        const newItem = {
+          serviceId: svc.id,
+          serviceName: svc.name,
+          date: selectedDate,
+          location: selectedLocation,
+          slotId: sl.id,
+          startMin: sl.startMin,
+          endMin: sl.endMin,
+          label: sl.label,
+          advanceMin: svc.advanceMin,
+        };
+        cart.push(newItem);
+      }
+      renderBookView();
+    };
+  });
+  const clearCartBtn = document.getElementById("btnClearCart");
+  if (clearCartBtn) clearCartBtn.onclick = () => { cart = []; renderBookView(); };
+  const checkoutBtn = document.getElementById("btnCheckout");
+  if (checkoutBtn) checkoutBtn.onclick = () => openCheckoutModal();
+  el.querySelectorAll("[data-remove]").forEach(chip => {
+    chip.onclick = () => { cart.splice(Number(chip.dataset.remove), 1); renderBookView(); };
+  });
+}
+
+function openCheckoutModal() {
+  if (cart.length === 0) return;
+  const cartDate = cart[0].date;
+  const cartLocation = cart[0].location;
+  const maxAdvance = cart.reduce((m, c) => Math.max(m, c.advanceMin || 0), 0);
+
+  const bg = document.createElement("div");
+  bg.className = "modal-bg";
+  bg.innerHTML = `
+    <div class="modal">
+      <h3>ตรวจสอบและยืนยันการจอง</h3>
+      <p class="muted">สถานที่: ${cartLocation} · วันที่ ${cartDate}</p>
+      <ul style="padding-left:18px; margin:8px 0;">
+        ${cart.map(c => `<li>${c.serviceName} · ${c.label}${c.advanceMin ? ` <span class="muted">(จองล่วงหน้า ≥${c.advanceMin} นาที)</span>` : ""}</li>`).join("")}
+      </ul>
+      <p class="muted">รวม ${cart.length} รายการ (ใช้ข้อมูลผู้จองชุดเดียวกันสำหรับทุกรายการ และได้ทีมผู้ให้บริการทีมเดียวกันทั้งรอบ)</p>
+      ${maxAdvance ? `<div class="restrict-note">บางรายการต้องจองล่วงหน้าอย่างน้อย ${maxAdvance} นาทีก่อนถึงเวลา</div>` : ""}
+      <div class="restrict-note">ระบบจะเลือกทีมที่เดินทางมา "${cartLocation}" ทันเวลาให้อัตโนมัติ ถ้าไม่มีทีมว่างที่เดินทางทัน ระบบจะแจ้งว่าจองไม่ได้สำหรับช่วงเวลานี้</div>
+      <label>ชื่อ-สกุล</label>
+      <input type="text" id="fName" />
+      <label>สถานะ</label>
+      <div class="radio-row">
+        ${META.statusOptions.map(o => `<label><input type="radio" name="fStatus" value="${o}" ${o===META.statusOptions[0]?'checked':''}/> ${o}</label>`).join("")}
+      </div>
+      <label>ชนิดกีฬา</label>
+      <select id="fSport">
+        ${META.sportTypes.map(t => `<option value="${t}">${t}</option>`).join("")}
+      </select>
+      <label>จำนวนนักกีฬา (คน)</label>
+      <input type="text" inputmode="numeric" id="fAthleteCount" placeholder="เช่น 3" />
+      <label>เบอร์โทรศัพท์</label>
+      <input type="tel" id="fPhone" />
+      <label>หมายเหตุ <span style="font-weight:400; color:var(--muted); font-size:13px;">(ระบุว่ามีอาการบาดเจ็บหรือไม่)</span></label>
+      <textarea id="fNote" rows="2" placeholder="เช่น ไม่มีอาการบาดเจ็บ / มีอาการเจ็บข้อเท้า"></textarea>
+      <div class="actions">
+        <button class="btn btn-outline" id="btnCancel">ยกเลิก</button>
+        <button class="btn btn-primary" id="btnConfirm">ยืนยันจองทั้งหมด</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(bg);
+  bg.querySelector("#btnCancel").onclick = () => bg.remove();
+
+  bg.querySelector("#btnConfirm").onclick = async () => {
+    const name = bg.querySelector("#fName").value.trim();
+    const status = bg.querySelector('input[name="fStatus"]:checked')?.value;
+    const sportType = bg.querySelector("#fSport").value;
+    const athleteCount = bg.querySelector("#fAthleteCount").value.trim();
+    const location = cartLocation;
+    const phone = bg.querySelector("#fPhone").value.trim();
+    const note = bg.querySelector("#fNote").value.trim();
+
+    if (!name || !phone) { toast("กรุณากรอกชื่อและเบอร์โทรศัพท์"); return; }
+    if (!athleteCount || !/^\d+$/.test(athleteCount) || Number(athleteCount) < 1) {
+      toast("กรุณากรอกจำนวนนักกีฬาเป็นตัวเลข (อย่างน้อย 1)");
+      return;
+    }
+
+    // จองทุกรายการในตะกร้าเป็น "1 รอบ" เดียวกัน (ได้ทีมผู้ให้บริการทีมเดียวกันทั้งรอบ ไม่ว่าจะข้ามกี่บริการ)
+    const cartSnapshot = cart.slice();
+    const res = await api("createBatch", {
+      date: cartDate,
+      items: cartSnapshot.map(c => ({ serviceId: c.serviceId, slotId: c.slotId })),
+      fields: { name, status, sportType, athleteCount: Number(athleteCount), location, phone, note },
+    });
+
+    let okCount = 0;
+    const failedLabels = [];
+    const succeeded = new Set();
+    if (res.ok && Array.isArray(res.results)) {
+      res.results.forEach((r, i) => {
+        const c = cartSnapshot[i] || cartSnapshot.find(x => x.serviceId === r.serviceId && x.slotId === r.slotId);
+        const label = c ? `${c.serviceName} · ${c.label}` : `${r.serviceId || ""} ${r.slotId || ""}`;
+        if (r.ok) {
+          okCount++;
+          if (c) succeeded.add(cartKey(c));
+        } else if (r.err === "slot_full") {
+          failedLabels.push(`${label} (เต็มแล้ว)`);
+        } else if (r.err === "team_full") {
+          failedLabels.push(`${label} (ทีมเวชศาสตร์เต็มแล้ว ช่วงเวลานี้มีผู้ใช้บริการครบ ${r.teamCapacity} ทีมแล้ว)`);
+        } else if (r.err === "too_late") {
+          failedLabels.push(`${label} (ต้องจองล่วงหน้า ≥${r.advanceMin} นาที)`);
+        } else {
+          failedLabels.push(`${label} (${r.err})`);
+        }
+      });
+    } else if (res.err === "service_not_available_at_location") {
+      const d = res.detail || {};
+      failedLabels.push(`บริการ "${d.serviceName||''}" ไม่มีให้บริการที่ "${d.location||''}" กรุณาแก้ไขตะกร้าหรือเปลี่ยนสถานที่`);
+    } else if (res.err === "team_full") {
+      failedLabels.push(`ไม่มีทีมเวชศาสตร์ว่างหรือเดินทางไปสถานที่ "${location}" ทันช่วงเวลานี้ (ครบ ${res.teamCapacity||4} ทีมแล้ว หรือทีมที่ว่างเดินทางจากงานก่อนหน้าไม่ทัน) ลองเลือกเวลาหรือสถานที่อื่น`);
+    } else if (res.err) {
+      failedLabels.push(res.err);
+    }
+
+    // เอาเฉพาะรายการที่จองสำเร็จออกจากตะกร้า เหลือรายการที่ไม่สำเร็จไว้ให้แก้ไข/ลองใหม่
+    cart = cart.filter(c => !succeeded.has(cartKey(c)));
+
+    await loadBookings();
+    renderBookView();
+    bg.remove();
+
+    if (failedLabels.length === 0) {
+      toast(`จองคิวสำเร็จ ${okCount} รายการ (ทีมเดียวกันทั้งรอบ)`);
+    } else if (okCount > 0) {
+      toast(`จองสำเร็จ ${okCount} รายการ · ไม่สำเร็จ: ${failedLabels.join(", ")}`);
+    } else {
+      toast(`จองไม่สำเร็จ: ${failedLabels.join(", ")}`);
+    }
+  };
+}
+
+// ===================== ADMIN =====================
+
+// รวมช่วงเวลาที่ "ติดกัน" ภายในรอบการจองเดียวกัน (roundId เดียวกัน) และเป็น "บริการเดียวกัน" ให้แสดงเป็นแถวเดียว
+// เช่น จอง 09:00-09:30 และ 09:30-10:00 ของบริการเดียวกันในรอบเดียวกัน -> แสดงเป็น "09:00-10:00" แถวเดียว
+// ถ้ามีช่วงเวลาที่ไม่ติดกัน (มีช่องว่างคั่น) หรือเป็นคนละบริการกัน จะแยกเป็นคนละแถวเสมอ
+// (ต้องตรวจบริการด้วย เพราะ 1 รอบตอนนี้เลือกได้หลายบริการผสมกัน เช่น นวด+ติดเทป จะได้ไม่ถูกรวมเป็นแถวเดียวกันผิดๆ)
+function mergeBookingsForDisplay(bookings) {
+  const groups = new Map();
+  for (const b of bookings) {
+    const groupKey = b.roundId || b.key; // ข้อมูลเก่าที่ไม่มี roundId จะไม่ถูกรวมกับใคร
+    if (!groups.has(groupKey)) groups.set(groupKey, []);
+    groups.get(groupKey).push(b);
+  }
+
+  const displayRows = [];
+  for (const items of groups.values()) {
+    items.sort((a, b) => (a.startMin ?? 0) - (b.startMin ?? 0));
+    let cluster = null;
+    for (const b of items) {
+      if (cluster && cluster.date === b.date && cluster.serviceId === b.serviceId && cluster.endMin === b.startMin) {
+        cluster.endMin = b.endMin;
+        cluster.keys.push(b.key);
+      } else {
+        if (cluster) displayRows.push(cluster);
+        cluster = { ...b, keys: [b.key] };
+      }
+    }
+    if (cluster) displayRows.push(cluster);
+  }
+
+  for (const row of displayRows) {
+    const pad = n => String(n).padStart(2, "0");
+    const hh1 = pad(Math.floor(row.startMin/60)), mm1 = pad(row.startMin%60);
+    const hh2 = pad(Math.floor(row.endMin/60)), mm2 = pad(row.endMin%60);
+    row.mergedLabel = `${hh1}:${mm1}-${hh2}:${mm2}`;
+  }
+
+  displayRows.sort((a,b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    return (a.startMin ?? 0) - (b.startMin ?? 0);
+  });
+  return displayRows;
+}
+
+function renderAdminView() {
+  const el = document.getElementById("adminView");
+  if (!adminAuthed) {
+    el.innerHTML = `
+      <div class="admin-login card">
+        <h3>เข้าสู่ระบบผู้ดูแล</h3>
+        <input type="text" id="passInput" placeholder="รหัสผ่าน" />
+        <div class="actions" style="justify-content:center; margin-top:14px;">
+          <button class="btn btn-primary" id="btnLogin">เข้าสู่ระบบ</button>
+        </div>
+      </div>
+    `;
+    el.querySelector("#btnLogin").onclick = () => {
+      if (el.querySelector("#passInput").value === ADMIN_PASSCODE) {
+        adminAuthed = true;
+        renderAdminView();
+      } else {
+        toast("รหัสผ่านไม่ถูกต้อง");
+      }
+    };
+    return;
+  }
+
+  const allRows = mergeBookingsForDisplay(bookingsCache);
+  const totalSlots = bookingsCache.length;
+
+  const teamCounts = {};
+  for (const r of allRows) teamCounts[r.providerTeam] = (teamCounts[r.providerTeam] || 0) + 1;
+
+  const teamFilteredRows = adminTeamFilter === "all"
+    ? allRows
+    : allRows.filter(r => r.providerTeam === adminTeamFilter);
+
+  // แยกประเภทการให้บริการ (บริการ) ของทีมที่กำลังดูอยู่ ด้วยแท็บย่อยที่สอง — นับจากชุดที่กรองตามทีมแล้ว
+  // เพื่อให้เห็นว่าทีมนั้นๆ ให้บริการอะไรไปแล้วบ้าง กี่คิว แยกเป็นหมวดชัดเจน ไม่ปนกันจนงง
+  const serviceCounts = {};
+  for (const r of teamFilteredRows) serviceCounts[r.serviceId] = (serviceCounts[r.serviceId] || 0) + 1;
+
+  const rows = adminServiceFilter === "all"
+    ? teamFilteredRows
+    : teamFilteredRows.filter(r => r.serviceId === adminServiceFilter);
+
+  const teamTabs = [
+    { key: "all", label: `ทั้งหมด (${allRows.length})` },
+    ...PROVIDER_TEAMS.map(t => ({ key: t, label: `${t} (${teamCounts[t] || 0})` })),
+  ];
+
+  const serviceTabs = [
+    { key: "all", label: `ทุกบริการ (${teamFilteredRows.length})` },
+    ...META.services.map(s => ({ key: s.id, label: `${s.name} (${serviceCounts[s.id] || 0})` })),
+  ];
+
+  el.innerHTML = `
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <h3 style="margin:0;">ภาพรวมการจองทั้งหมด (${rows.length} แถว · ${totalSlots} ช่วงเวลา)</h3>
+        <div>
+          <button class="btn btn-outline" id="btnRefresh">รีเฟรช</button>
+          <button class="btn btn-outline" id="btnDiag">ตรวจสอบระบบ</button>
+          <button class="btn btn-primary" id="btnExport">ส่งออก Excel</button>
+        </div>
+      </div>
+      <p class="muted" style="margin:10px 0 2px;">ทีมผู้ให้บริการ</p>
+      <div class="tabs" style="margin-top:4px;">
+        ${teamTabs.map(t => `<button class="team-tab ${adminTeamFilter===t.key?'active':''}" data-team="${encodeURIComponent(t.key)}">${t.label}</button>`).join("")}
+      </div>
+      <p class="muted" style="margin:10px 0 2px;">แยกตามประเภทบริการ (ของทีมที่เลือกด้านบน)</p>
+      <div class="tabs" style="margin-top:4px;">
+        ${serviceTabs.map(t => `<button class="service-tab ${adminServiceFilter===t.key?'active':''}" data-svcfilter="${encodeURIComponent(t.key)}">${t.label}</button>`).join("")}
+      </div>
+      <p class="muted" style="margin:8px 0 0;">ช่วงเวลาที่จองติดกันในรอบและบริการเดียวกันจะถูกรวมแสดงเป็นแถวเดียว</p>
+      <div style="overflow:auto; margin-top:10px;">
+        <table>
+          <thead><tr>
+            <th>บริการ</th><th>วันที่</th><th>เวลา</th><th>ชื่อ</th><th>สถานะ</th>
+            <th>ชนิดกีฬา</th><th>จำนวนนักกีฬา</th><th>สถานที่</th><th>เบอร์โทร</th><th>ทีมผู้ให้บริการ</th><th>หมายเหตุ</th><th></th>
+          </tr></thead>
+          <tbody>
+            ${rows.map(b => `
+              <tr>
+                <td>${b.serviceName}</td>
+                <td>${b.date}</td>
+                <td>${b.mergedLabel}</td>
+                <td>${b.name}</td>
+                <td>${b.status}</td>
+                <td>${b.sportType}</td>
+                <td>${b.athleteCount ?? ""}</td>
+                <td>${b.location || ""}</td>
+                <td>${b.phone}</td>
+                <td>${b.providerTeam}</td>
+                <td>${b.note||""}</td>
+                <td><button class="btn btn-danger" data-cancel-keys='${JSON.stringify(b.keys)}' style="padding:4px 10px; font-size:13px;">ยกเลิก</button></td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  el.querySelectorAll(".team-tab").forEach(btn => {
+    btn.onclick = () => {
+      adminTeamFilter = decodeURIComponent(btn.dataset.team);
+      adminServiceFilter = "all"; // เปลี่ยนทีมแล้วรีเซ็ตตัวกรองบริการ กันดูค้างจากทีมก่อนหน้า
+      renderAdminView();
+    };
+  });
+  el.querySelectorAll(".service-tab").forEach(btn => {
+    btn.onclick = () => {
+      adminServiceFilter = decodeURIComponent(btn.dataset.svcfilter);
+      renderAdminView();
+    };
+  });
+  el.querySelector("#btnRefresh").onclick = async () => { await loadBookings(); renderAdminView(); };
+  el.querySelector("#btnDiag").onclick = async () => {
+    const d = await api("diag", {});
+    toast(d.ok ? `ระบบปกติ · บันทึกทั้งหมด ${d.totalBookings} รายการ` : "ระบบมีปัญหา");
+  };
+  el.querySelector("#btnExport").onclick = () => {
+    const data = rows.map(b => ({
+      "บริการ": b.serviceName, "วันที่": b.date, "เวลา": b.mergedLabel, "ชื่อ": b.name,
+      "สถานะ": b.status, "ชนิดกีฬา": b.sportType, "จำนวนนักกีฬา": b.athleteCount ?? "",
+      "สถานที่": b.location || "", "เบอร์โทร": b.phone,
+      "ทีมผู้ให้บริการ": b.providerTeam, "หมายเหตุ": b.note || "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Bookings");
+    XLSX.writeFile(wb, "university-games-bookings.xlsx");
+  };
+  el.querySelectorAll("[data-cancel-keys]").forEach(btn => {
+    btn.onclick = async () => {
+      const keys = JSON.parse(btn.dataset.cancelKeys);
+      const msg = keys.length > 1 ? `ยืนยันยกเลิกคิวนี้ (รวม ${keys.length} ช่วงเวลา)?` : "ยืนยันยกเลิกคิวนี้?";
+      if (!confirm(msg)) return;
+      if (keys.length > 1) {
+        await api("cancelBatch", { keys });
+      } else {
+        await api("cancel", { key: keys[0] });
+      }
+      await loadBookings();
+      renderAdminView();
+    };
+  });
+}
+
+document.getElementById("tabBook").onclick = () => {
+  document.getElementById("tabBook").classList.add("active");
+  document.getElementById("tabAdmin").classList.remove("active");
+  document.getElementById("bookView").style.display = "";
+  document.getElementById("adminView").style.display = "none";
+};
+document.getElementById("tabAdmin").onclick = async () => {
+  document.getElementById("tabAdmin").classList.add("active");
+  document.getElementById("tabBook").classList.remove("active");
+  document.getElementById("bookView").style.display = "none";
+  document.getElementById("adminView").style.display = "";
+  await loadBookings();
+  renderAdminView();
+};
+
+(async function init() {
+  await loadMeta();
+  await loadBookings();
+  renderBookView();
+  setInterval(async () => {
+    await loadBookings();
+    if (document.getElementById("bookView").style.display !== "none") renderBookView();
+    else renderAdminView();
+  }, 30000);
+})();
+</script>
+</body>
+</html>
